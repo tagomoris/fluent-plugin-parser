@@ -4,8 +4,8 @@ Gem::Specification.new do |gem|
   gem.version       = "0.1.0"
   gem.authors       = ["TAGOMORI Satoshi"]
   gem.email         = ["tagomoris@gmail.com"]
-  gem.description   = %q{parse data of specified field, and emit as new message, or as addtional field of message}
-  gem.summary       = %q{fluentd plugin to parse single field, and re-emit it as message}
+  gem.description   = %q{fluentd plugin to parse single field, or to combine log structure into single field}
+  gem.summary       = %q{plugin to parse/combine fluentd log messages}
   gem.homepage      = "https://github.com/tagomoris/fluent-plugin-parser"
 
   gem.files         = `git ls-files`.split($\)

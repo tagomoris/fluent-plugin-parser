@@ -1,29 +1,77 @@
-# Fluent::Plugin::Parser
+# fluent-plugin-parser
 
-TODO: Write a gem description
+## Component
 
-## Installation
+### ParserOutput
 
-Add this line to your application's Gemfile:
+Parse string in log message, and re-emit.
 
-    gem 'fluent-plugin-parser'
+### DeparserOutput
 
-And then execute:
+Generate string log value from log message, with specified format and fields, and re-emit.
 
-    $ bundle
+## Configuration
 
-Or install it yourself as:
+### ParserOutput
 
-    $ gem install fluent-plugin-parser
+ParserOutput has just same with 'in_tail' about 'format' and 'time\_format':
 
-## Usage
+    <match raw.apache.common.*>
+      type parser
+      remove_prefix raw
+      format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)$/
+      time_format %d/%b/%Y:%H:%M:%S %z
+      key_name message
+    </match>
 
-TODO: Write usage instructions here
+Of course, you can use predefined format 'apache' and 'syslog':
 
-## Contributing
+    <match raw.apache.combined.*>
+      type parser
+      remove_prefix raw
+      format apache
+      key_name message
+    </match>
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Added some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+If you want original attribute-data pair in re-emitted message, specify 'reserve_data':
+
+    <match raw.apache.*>
+      type parser
+      tag apache
+      format apache
+      key_name message
+      reserve_data yes
+    </match>
+
+### DeparserOutput
+
+To build CSV from field 'store','item','num', as field 'csv', without raw data:
+
+    <match in.marketlog.**>
+      type deparser
+      remove_prefix in
+      format %s,%s,%s
+      format_key_names store,item,num
+      key_name csv
+    </match>
+
+To build same CSV, as additional field 'csv', with reserved raw fields:
+
+    <match in.marketlog>
+      type deparser
+      tag marketlog
+      format %s,%s,%s
+      format_key_names store,item,num
+      key_name csv
+      reserve_data yes
+    </match>
+
+## TODO
+
+* consider what to do next
+* patches welcome!
+
+## Copyright
+
+Copyright:: Copyright (c) 2012- TAGOMORI Satoshi (tagomoris)
+License::   Apache License, Version 2.0
