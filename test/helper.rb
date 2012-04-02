@@ -23,6 +23,7 @@ unless ENV.has_key?('VERBOSE')
 end
 
 require 'fluent/plugin/out_parser'
+require 'fluent/plugin/out_deparser'
 
 class Test::Unit::TestCase
 end
