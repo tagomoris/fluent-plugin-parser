@@ -51,16 +51,6 @@ class ParserOutputTest < Test::Unit::TestCase
         key_name foo
       ]
     }
-    assert_raise(Fluent::ConfigError) {
-      d = create_driver %[
-        remove_prefix foo.baz
-        add_prefix foo.bar
-        format /(?<x>.)/
-        key_name foo
-        time_format %Y%m%d
-      ]
-    }
-
     d = create_driver %[
       tag foo.bar
       key_name foo

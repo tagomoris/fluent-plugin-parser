@@ -1,3 +1,5 @@
+require_relative './fixed_parser'
+
 class Fluent::ParserOutput < Fluent::Output
   Fluent::Plugin.register_output('parser', self)
 
@@ -29,26 +31,8 @@ class Fluent::ParserOutput < Fluent::Output
       @added_prefix_string = @add_prefix + '.'
     end
 
-    @parser = Fluent::TextParser.new
+    @parser = FluentExt::TextParser.new
     @parser.configure(conf)
-
-    m = if @parser.regexp.named_captures['time']
-          method(:parse_with_time)
-        else
-          method(:parse_without_time)
-        end
-    (class << self; self; end).module_eval do
-      define_method(:parse, m)
-    end
-  end
-
-  def parse_with_time(value)
-    @parser.parse(value)
-  end
-
-  def parse_without_time(value)
-    t,r = @parser.parse(value)
-    return [nil, r]
   end
 
   def emit(tag, es, chain)
@@ -72,7 +56,7 @@ class Fluent::ParserOutput < Fluent::Output
       es.each {|time,record|
         value = record[@key_name]
         t,values = if value
-                     parse(value)
+                     @parser.parse(value)
                    else
                      [nil, {}]
                    end
@@ -84,7 +68,7 @@ class Fluent::ParserOutput < Fluent::Output
       es.each {|time,record|
         value = record[@key_name]
         t,values = if value
-                     parse(value)
+                     @parser.parse(value)
                    else
                      [nil, {}]
                    end
