@@ -58,11 +58,15 @@ class Fluent::ParserOutput < Fluent::Output
         t,values = if value
                      @parser.parse(value)
                    else
-                     [nil, {}]
+                     [nil, nil]
                    end
         t ||= time
-        record.update(values)
-        Fluent::Engine.emit(tag, t, record)
+        r = if values
+              record.merge(values)
+            else
+              record
+            end
+        Fluent::Engine.emit(tag, t, r)
       }
     else
       es.each {|time,record|
@@ -70,10 +74,12 @@ class Fluent::ParserOutput < Fluent::Output
         t,values = if value
                      @parser.parse(value)
                    else
-                     [nil, {}]
+                     [nil, nil]
                    end
         t ||= time
-        Fluent::Engine.emit(tag, t, values)
+        if values
+          Fluent::Engine.emit(tag, t, values)
+        end
       }
     end
     chain.next

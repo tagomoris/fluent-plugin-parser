@@ -67,6 +67,8 @@ class FluentExt::TextParser
       end
 
       return time, record
+    rescue Yajl::ParseError
+      return nil, nil
     end
   end
 
