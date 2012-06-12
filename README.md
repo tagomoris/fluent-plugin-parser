@@ -43,6 +43,15 @@ If you want original attribute-data pair in re-emitted message, specify 'reserve
       reserve_data yes
     </match>
 
+Format 'json' is also supported:
+
+    <match raw.sales.*>
+      type parser
+      tag sales
+      format json
+      key_name sales
+    </match>
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:
