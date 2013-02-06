@@ -52,6 +52,19 @@ Format 'json' is also supported:
       key_name sales
     </match>
 
+Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
+
+    <match raw.sales.*>
+      type parser
+      tag sales
+      format ltsv
+      key_name sales
+    </match>
+
+'LTSV' is format like below, unlinke json, easy to write with simple formatter (ex: LogFormat of apache):
+
+    KEY1:VALUE1 [TAB] KEY2:VALUE2 [TAB] ...
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:

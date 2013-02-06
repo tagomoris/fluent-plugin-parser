@@ -51,6 +51,22 @@ class ParserOutputTest < Test::Unit::TestCase
         key_name foo
       ]
     }
+    assert_nothing_raised {
+      d = create_driver %[
+        remove_prefix foo.baz
+        add_prefix foo.bar
+        format json
+        key_name foo
+      ]
+    }
+    assert_nothing_raised {
+      d = create_driver %[
+        remove_prefix foo.baz
+        add_prefix foo.bar
+        format ltsv
+        key_name foo
+      ]
+    }
     d = create_driver %[
       tag foo.bar
       key_name foo
@@ -188,5 +204,61 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal 'foobar', second[2]['data']
     assert_equal 'x', second[2]['xxx']
     assert_equal 'y', second[2]['yyy']
+  end
+
+  CONFIG_LTSV =  %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format ltsv
+    key_name data
+  ]
+  def test_emit_ltsv
+    d = create_driver(CONFIG_LTSV, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => "xxx:first\tyyy:second", 'xxx' => 'x', 'yyy' => 'y'}, time)
+      d.emit({'data' => "xxx:first\tyyy:second2", 'xxx' => 'x', 'yyy' => 'y'}, time)
+    end
+    emits = d.emits
+    assert_equal 2, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+    assert_nil first[2]['data']
+    assert_equal 'first', first[2]['xxx']
+    assert_equal 'second', first[2]['yyy']
+
+    second = emits[1]
+    assert_equal 'foo.bar.test', second[0]
+    assert_equal time, second[1]
+    assert_nil first[2]['data']
+    assert_equal 'first', second[2]['xxx']
+    assert_equal 'second2', second[2]['yyy']
+
+    d = create_driver(CONFIG_LTSV + %[
+      reserve_data yes
+    ], 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => "xxx:first\tyyy:second", 'xxx' => 'x', 'yyy' => 'y'}, time)
+      d.emit({'data' => "xxx:first\tyyy:second2", 'xxx' => 'x', 'yyy' => 'y'}, time)
+    end
+    emits = d.emits
+    assert_equal 2, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+    assert_equal "xxx:first\tyyy:second", first[2]['data']
+    assert_equal 'first', first[2]['xxx']
+    assert_equal 'second', first[2]['yyy']
+
+    second = emits[1]
+    assert_equal 'foo.bar.test', second[0]
+    assert_equal time, second[1]
+    assert_equal "xxx:first\tyyy:second", first[2]['data']
+    assert_equal 'first', second[2]['xxx']
+    assert_equal 'second2', second[2]['yyy']
   end
 end

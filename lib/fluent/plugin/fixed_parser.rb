@@ -47,15 +47,13 @@ class FluentExt::TextParser
     end
   end
 
-  class JSONParser
+  class GenericParser
     include Fluent::Configurable
 
     config_param :time_key, :string, :default => 'time'
     config_param :time_format, :string, :default => nil
 
-    def call(text)
-      record = Yajl.load(text)
-
+    def parse_time(record)
       time = nil
       
       if value = record.delete(@time_key)
@@ -67,8 +65,22 @@ class FluentExt::TextParser
       end
 
       return time, record
+    end
+  end
+
+  class JSONParser < GenericParser
+    def call(text)
+      record = Yajl.load(text)
+      return parse_time(record)
     rescue Yajl::ParseError
       return nil, nil
+    end
+  end
+
+  class LabeledTSVParser < GenericParser
+    def call(text)
+      record = Hash[text.split("\t").map{|p| p.split(":", 2)}]
+      parse_time(record)
     end
   end
 
@@ -76,6 +88,7 @@ class FluentExt::TextParser
     'apache' => RegexpParser.new(/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/, {'time_format'=>"%d/%b/%Y:%H:%M:%S %z"}),
     'syslog' => RegexpParser.new(/^(?<time>[^ ]*\s*[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?[^\:]*\: *(?<message>.*)$/, {'time_format'=>"%b %d %H:%M:%S"}),
     'json' => JSONParser.new,
+    'ltsv' => LabeledTSVParser.new,
   }
 
   def self.register_template(name, regexp_or_proc, time_format=nil)
