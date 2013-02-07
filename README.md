@@ -65,6 +65,8 @@ Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
 
     KEY1:VALUE1 [TAB] KEY2:VALUE2 [TAB] ...
 
+About LTSV, see: http://ltsv.org/
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:
