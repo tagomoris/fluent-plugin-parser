@@ -20,8 +20,7 @@ class FluentExt::TextParser
     def call(text)
       m = @regexp.match(text)
       unless m
-        $log.debug "pattern not match: #{text}"
-        # TODO?
+        $log.warn "pattern not match: #{text}"
         return nil, nil
       end
 
@@ -55,15 +54,13 @@ class FluentExt::TextParser
 
     def parse_time(record)
       time = nil
-      
       if value = record.delete(@time_key)
-        if @time_format
-          time = Time.strptime(value, @time_format).to_i
-        else
-          time = value.to_i
-        end
+        time = if @time_format
+                 Time.strptime(value, @time_format).to_i
+               else
+                 Time.parse(value).to_i
+               end
       end
-
       return time, record
     end
   end
@@ -73,6 +70,7 @@ class FluentExt::TextParser
       record = Yajl.load(text)
       return parse_time(record)
     rescue Yajl::ParseError
+      $log.warn "pattern not match(json): #{text.inspect}: #{$!}"
       return nil, nil
     end
   end
@@ -84,22 +82,109 @@ class FluentExt::TextParser
     end
   end
 
-  TEMPLATES = {
-    'apache' => RegexpParser.new(/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/, {'time_format'=>"%d/%b/%Y:%H:%M:%S %z"}),
-    'syslog' => RegexpParser.new(/^(?<time>[^ ]*\s*[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?[^\:]*\: *(?<message>.*)$/, {'time_format'=>"%b %d %H:%M:%S"}),
-    'json' => JSONParser.new,
-    'ltsv' => LabeledTSVParser.new,
+  class ValuesParser < GenericParser
+    config_param :keys, :string
+
+    def configure(conf)
+      super
+      @keys = @keys.split(",")
+    end
+
+    def values_map(values)
+      Hash[@keys.zip(values)]
+    end
+  end
+
+  class TSVParser < ValuesParser
+    config_param :delimiter, :string, :default => "\t"
+
+    def call(text)
+      return parse_time(values_map(text.split(@delimiter)))
+    end
+  end
+
+  class CSVParser < ValuesParser
+    def initialize
+      super
+      require 'csv'
+    end
+
+    def call(text)
+      return parse_time(values_map(CSV.parse_line(text)))
+    end
+  end
+
+  class ApacheParser
+    include Fluent::Configurable
+
+    REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
+
+    def call(text)
+      m = REGEXP.match(text)
+      unless m
+        $log.warn "pattern not match: #{text.inspect}"
+        return nil, nil
+      end
+
+      host = m['host']
+      host = (host == '-') ? nil : host
+
+      user = m['user']
+      user = (user == '-') ? nil : user
+      
+      time = m['time']
+      time = Time.strptime(time, "%d/%b/%Y:%H:%M:%S %z").to_i
+      
+      method = m['method']
+      path = m['path']
+      
+      code = m['code'].to_i 
+      code = nil if code == 0
+
+      size = m['size']
+      size = (size == '-') ? nil : size.to_i
+      
+      referer = m['referer']
+      referer = (referer == '-') ? nil : referer
+      
+      agent = m['agent']
+      agent = (agent == '-') ? nil : agent
+      
+      record = {
+        "host" => host,
+        "user" => user,
+        "method" => method,
+        "path" => path,
+        "code" => code,
+        "size" => size,
+        "referer" => referer,
+        "agent" => agent,
+      } 
+
+      return time, record
+    end
+  end
+
+  TEMPLATE_FACTORIES = {
+    'apache' => Proc.new { RegexpParser.new(/^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/, {'time_format'=>"%d/%b/%Y:%H:%M:%S %z"}) },
+    'apache2' => Proc.new { ApacheParser.new },
+    'nginx' => Proc.new { RegexpParser.new(/^(?<remote>[^ ]*) (?<host>[^ ]*) (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/,  {'time_format'=>"%d/%b/%Y:%H:%M:%S %z"}) },
+    'syslog' => Proc.new { RegexpParser.new(/^(?<time>[^ ]*\s*[^ ]* [^ ]*) (?<host>[^ ]*) (?<ident>[a-zA-Z0-9_\/\.\-]*)(?:\[(?<pid>[0-9]+)\])?[^\:]*\: *(?<message>.*)$/, {'time_format'=>"%b %d %H:%M:%S"}) },
+    'json' => Proc.new { JSONParser.new },
+    'csv' => Proc.new { CSVParser.new },
+    'tsv' => Proc.new { TSVParser.new },
+    'ltsv' => Proc.new { LabeledTSVParser.new },
   }
 
   def self.register_template(name, regexp_or_proc, time_format=nil)
-    if regexp_or_proc.is_a?(Regexp)
-      pr = regexp_or_proc
-    else
-      regexp = regexp_or_proc
-      pr = RegexpParser.new(regexp, {'time_format'=>time_format})
-    end
-
-    TEMPLATES[name] = pr
+    
+    factory = if regexp_or_proc.is_a?(Regexp)
+                regexp = regexp_or_proc
+                Proc.new { RegexpParser.new(regexp, {'time_format'=>time_format}) }
+              else
+                Proc.new { proc }
+              end
+    TEMPLATE_FACTORIES[name] = factory
   end
 
   def initialize
@@ -127,15 +212,16 @@ class FluentExt::TextParser
       rescue
         raise Fluent::ConfigError, "Invalid regexp '#{format[1..-2]}': #{$!}"
       end
-
       @parser = RegexpParser.new(regexp)
 
     else
       # built-in template
-      @parser = TEMPLATES[format]
-      unless @parser
+      factory = TEMPLATE_FACTORIES[format]
+      unless factory
         raise ConfigError, "Unknown format template '#{format}'"
       end
+      @parser = factory.call
+
     end
 
     if @parser.respond_to?(:configure)

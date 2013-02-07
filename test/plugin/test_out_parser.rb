@@ -261,4 +261,58 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal 'first', second[2]['xxx']
     assert_equal 'second2', second[2]['yyy']
   end
+
+  CONFIG_TSV =  %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format tsv
+    key_name data
+    keys key1,key2,key3
+  ]
+  def test_emit_ltsv
+    d = create_driver(CONFIG_TSV, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => "value1\tvalue2\tvalueThree", 'xxx' => 'x', 'yyy' => 'y'}, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+    assert_nil first[2]['data']
+    assert_equal 'value1', first[2]['key1']
+    assert_equal 'value2', first[2]['key2']
+    assert_equal 'valueThree', first[2]['key3']
+  end
+
+  CONFIG_CSV =  %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format csv
+    key_name data
+    keys key1,key2,key3
+  ]
+  def test_emit_ltsv
+    d = create_driver(CONFIG_CSV, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => 'value1,"value2","value""ThreeYes!"', 'xxx' => 'x', 'yyy' => 'y'}, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+    assert_nil first[2]['data']
+    assert_equal 'value1', first[2]['key1']
+    assert_equal 'value2', first[2]['key2']
+    assert_equal 'value"ThreeYes!', first[2]['key3']
+  end
+
+  #TODO: apache2
+  # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
+
 end

@@ -43,7 +43,7 @@ If you want original attribute-data pair in re-emitted message, specify 'reserve
       reserve_data yes
     </match>
 
-Format 'json' is also supported:
+Format 'json', 'csv' and 'tsv' is also supported:
 
     <match raw.sales.*>
       type parser
