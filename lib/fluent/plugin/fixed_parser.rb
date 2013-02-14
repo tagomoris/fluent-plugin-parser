@@ -18,6 +18,7 @@ class FluentExt::TextParser
     end
 
     def call(text)
+      text = text.encode("UTF-8", "UTF-8", invalid: :replace, undef: :replace, replace: '?')
       m = @regexp.match(text)
       unless m
         $log.warn "pattern not match: #{text}"
