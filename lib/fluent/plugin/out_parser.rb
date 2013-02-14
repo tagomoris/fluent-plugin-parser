@@ -55,6 +55,7 @@ class Fluent::ParserOutput < Fluent::Output
     if @reserve_data
       es.each {|time,record|
         value = record[@key_name]
+        value.encode!("UTF-8", "UTF-8", invalid: :replace, undef: :replace, replace: '?')
         t,values = if value
                      @parser.parse(value)
                    else
@@ -71,6 +72,7 @@ class Fluent::ParserOutput < Fluent::Output
     else
       es.each {|time,record|
         value = record[@key_name]
+        value.encode!("UTF-8", "UTF-8", invalid: :replace, undef: :replace, replace: '?')
         t,values = if value
                      @parser.parse(value)
                    else
