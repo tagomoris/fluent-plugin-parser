@@ -328,6 +328,9 @@ class ParserOutputTest < Test::Unit::TestCase
         d.emit({'message' => invalid_utf8}, Time.now.to_i)
       end
     }
+    emits = d.emits
+    assert_equal 1, emits.length
+    assert_equal invalid_utf8, emits[0][2]['message'] # we intentionally keep the invalid utf8 character
   end
 
   CONFIG_INVALID_UTF8_RESERVE_DATA = %[
@@ -344,5 +347,8 @@ class ParserOutputTest < Test::Unit::TestCase
         d.emit({'message' => invalid_utf8}, Time.now.to_i)
       end
     }
+    emits = d.emits
+    assert_equal 1, emits.length
+    assert_equal invalid_utf8, emits[0][2]['message'] # we intentionally keep the invalid utf8 character
   end
 end
