@@ -330,7 +330,7 @@ class ParserOutputTest < Test::Unit::TestCase
     }
     emits = d.emits
     assert_equal 1, emits.length
-    assert_equal invalid_utf8, emits[0][2]['message'] # we intentionally keep the invalid utf8 character
+    assert_equal '?'.force_encoding('utf-8'), emits[0][2]['message']
   end
 
   CONFIG_INVALID_UTF8_RESERVE_DATA = %[
@@ -349,6 +349,6 @@ class ParserOutputTest < Test::Unit::TestCase
     }
     emits = d.emits
     assert_equal 1, emits.length
-    assert_equal invalid_utf8, emits[0][2]['message'] # we intentionally keep the invalid utf8 character
+    assert_equal '?'.force_encoding('utf-8'), emits[0][2]['message']
   end
 end
