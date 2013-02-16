@@ -55,9 +55,8 @@ class Fluent::ParserOutput < Fluent::Output
     if @reserve_data
       es.each {|time,record|
         value = record[@key_name]
-        value = value.encode("UTF-16BE", "UTF-8", invalid: :replace, undef: :replace, replace: '?').encode("UTF-8", "UTF-16BE") if value.encoding == Encoding::UTF_8
         t,values = if value
-                     @parser.parse(value)
+                     parse(value)
                    else
                      [nil, nil]
                    end
@@ -72,9 +71,8 @@ class Fluent::ParserOutput < Fluent::Output
     else
       es.each {|time,record|
         value = record[@key_name]
-        value = value.encode("UTF-16BE", "UTF-8", invalid: :replace, undef: :replace, replace: '?').encode("UTF-8", "UTF-16BE") if value.encoding == Encoding::UTF_8
         t,values = if value
-                     @parser.parse(value)
+                     parse(value)
                    else
                      [nil, nil]
                    end
@@ -85,5 +83,23 @@ class Fluent::ParserOutput < Fluent::Output
       }
     end
     chain.next
+  end
+
+  private
+
+  def parse(string)
+    begin
+      @parser.parse(string)
+    rescue ArgumentError => e
+      raise e unless e.message.index("invalid byte sequence in") == 0
+      replaced_string = replace_invalid_byte(string)
+      @parser.parse(replaced_string)
+    end
+  end
+
+  def replace_invalid_byte(string)
+    replace_options = { invalid: :replace, undef: :replace, replace: '?' }
+    temporal_encoding = (string.encoding == Encoding::UTF_8 ? Encoding::UTF_16BE : Encoding::UTF_8)
+    string.encode(temporal_encoding, string.encoding, replace_options).encode(string.encoding)
   end
 end

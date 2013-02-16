@@ -315,40 +315,47 @@ class ParserOutputTest < Test::Unit::TestCase
   #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 
-  CONFIG_INVALID_UTF8 = %[
+  CONFIG_INVALID_BYTE = %[
     remove_prefix test
-    key_name      message
+    key_name      data
     format        /^(?<message>.*)$/
   ]
-  def test_emit_invalid_utf8
-    d = create_driver(CONFIG_INVALID_UTF8, 'test.in')
-    invalid_utf8 = "\xff".force_encoding('utf-8')
+  def test_emit_invalid_byte
+    invalid_utf8 = "\xff".force_encoding('UTF-8')
+    d = create_driver(CONFIG_INVALID_BYTE, 'test.in')
     assert_nothing_raised {
       d.run do
-        d.emit({'message' => invalid_utf8}, Time.now.to_i)
+        d.emit({'data' => invalid_utf8}, Time.now.to_i)
       end
     }
     emits = d.emits
     assert_equal 1, emits.length
-    assert_equal '?'.force_encoding('utf-8'), emits[0][2]['message']
-  end
+    assert_nil emits[0][2]['data']
+    assert_equal '?'.force_encoding('UTF-8'), emits[0][2]['message']
 
-  CONFIG_INVALID_UTF8_RESERVE_DATA = %[
-    remove_prefix test
-    key_name      message
-    format        /^(?<message>.*)$/
-    reserve_data  true
-  ]
-  def test_emit_invalid_utf8_reserve_data
-    d = create_driver(CONFIG_INVALID_UTF8_RESERVE_DATA, 'test.in')
-    invalid_utf8 = "\xff".force_encoding('utf-8')
+    d = create_driver(CONFIG_INVALID_BYTE + %[
+      reserve_data yes
+    ], 'test.in')
     assert_nothing_raised {
       d.run do
-        d.emit({'message' => invalid_utf8}, Time.now.to_i)
+        d.emit({'data' => invalid_utf8}, Time.now.to_i)
       end
     }
     emits = d.emits
     assert_equal 1, emits.length
-    assert_equal '?'.force_encoding('utf-8'), emits[0][2]['message']
+    assert_equal invalid_utf8, emits[0][2]['data']
+    assert_equal '?'.force_encoding('UTF-8'), emits[0][2]['message']
+
+    invalid_ascii = "\xff".force_encoding('US-ASCII')
+    d = create_driver(CONFIG_INVALID_BYTE, 'test.in')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'data' => invalid_ascii}, Time.now.to_i)
+      end
+    }
+    emits = d.emits
+    assert_equal 1, emits.length
+    assert_nil emits[0][2]['data']
+    assert_equal '?'.force_encoding('US-ASCII'), emits[0][2]['message']
   end
 end
