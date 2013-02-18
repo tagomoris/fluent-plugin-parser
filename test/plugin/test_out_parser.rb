@@ -315,13 +315,24 @@ class ParserOutputTest < Test::Unit::TestCase
   #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 
-  CONFIG_INVALID_BYTE = %[
+  CONFIG_NOT_REPLACE = %[
     remove_prefix test
     key_name      data
     format        /^(?<message>.*)$/
   ]
+  CONFIG_INVALID_BYTE = CONFIG_NOT_REPLACE + %[
+    replace_invalid_sequence true
+  ]
   def test_emit_invalid_byte
     invalid_utf8 = "\xff".force_encoding('UTF-8')
+
+    d = create_driver(CONFIG_NOT_REPLACE, 'test.in')
+    assert_raise(ArgumentError) {
+      d.run do
+        d.emit({'data' => invalid_utf8}, Time.now.to_i)
+      end
+    }
+
     d = create_driver(CONFIG_INVALID_BYTE, 'test.in')
     assert_nothing_raised {
       d.run do

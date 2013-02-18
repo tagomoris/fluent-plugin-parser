@@ -8,6 +8,7 @@ class Fluent::ParserOutput < Fluent::Output
   config_param :add_prefix, :string, :default => nil
   config_param :key_name, :string
   config_param :reserve_data, :bool, :default => false
+  config_param :replace_invalid_sequence, :bool, :default => false
 
   def initialize
     super
@@ -88,6 +89,8 @@ class Fluent::ParserOutput < Fluent::Output
   private
 
   def parse(string)
+    return @parser.parse(string) unless @replace_invalid_sequence
+
     begin
       @parser.parse(string)
     rescue ArgumentError => e
