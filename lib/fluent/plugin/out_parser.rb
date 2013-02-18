@@ -91,7 +91,9 @@ class Fluent::ParserOutput < Fluent::Output
     begin
       @parser.parse(string)
     rescue ArgumentError => e
-      raise e unless e.message.index("invalid byte sequence in") == 0
+      unless e.message.index("invalid byte sequence in") == 0
+        raise
+      end
       replaced_string = replace_invalid_byte(string)
       @parser.parse(replaced_string)
     end
@@ -99,7 +101,8 @@ class Fluent::ParserOutput < Fluent::Output
 
   def replace_invalid_byte(string)
     replace_options = { invalid: :replace, undef: :replace, replace: '?' }
-    temporal_encoding = (string.encoding == Encoding::UTF_8 ? Encoding::UTF_16BE : Encoding::UTF_8)
-    string.encode(temporal_encoding, string.encoding, replace_options).encode(string.encoding)
+    original_encoding = string.encoding
+    temporal_encoding = (original_encoding == Encoding::UTF_8 ? Encoding::UTF_16BE : Encoding::UTF_8)
+    string.encode(temporal_encoding, original_encoding, replace_options).encode(original_encoding)
   end
 end
