@@ -67,6 +67,18 @@ Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
 
 About LTSV, see: http://ltsv.org/
 
+If you want to suppress 'pattern not match' log, specify 'unmatch_silent true' to configuration.
+default value is false.
+
+    <match in.hogelog>
+      type parser
+      tag hogelog
+      format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+      key_name message
+      unmatch_silent true
+    </match>
+
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:

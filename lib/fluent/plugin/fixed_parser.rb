@@ -8,6 +8,7 @@ class FluentExt::TextParser
     include Fluent::Configurable
 
     config_param :time_format, :string, :default => nil
+    config_param :unmatch_silent, :bool, :default => false
 
     def initialize(regexp, conf={})
       super()
@@ -20,7 +21,10 @@ class FluentExt::TextParser
     def call(text)
       m = @regexp.match(text)
       unless m
-        $log.warn "pattern not match: #{text}"
+        unless @unmatch_silent
+          $log.warn "pattern not match: #{text}"
+        end
+
         return nil, nil
       end
 
@@ -70,7 +74,10 @@ class FluentExt::TextParser
       record = Yajl.load(text)
       return parse_time(record)
     rescue Yajl::ParseError
-      $log.warn "pattern not match(json): #{text.inspect}: #{$!}"
+      unless @unmatch_silent
+        $log.warn "pattern not match(json): #{text.inspect}: #{$!}"
+      end
+
       return nil, nil
     end
   end
@@ -122,7 +129,10 @@ class FluentExt::TextParser
     def call(text)
       m = REGEXP.match(text)
       unless m
-        $log.warn "pattern not match: #{text.inspect}"
+        unless @unmatch_silent
+          $log.warn "pattern not match: #{text.inspect}"
+        end
+
         return nil, nil
       end
 

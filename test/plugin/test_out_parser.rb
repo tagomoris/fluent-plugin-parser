@@ -67,6 +67,22 @@ class ParserOutputTest < Test::Unit::TestCase
         key_name foo
       ]
     }
+    assert_nothing_raised {
+    d = create_driver %[
+        tag hogelog
+        format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+        key_name message
+        unmatch_silent true
+      ]
+    }
+    assert_nothing_raised {
+      d = create_driver %[
+        tag hogelog
+        format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+        key_name message
+        unmatch_silent false
+      ]
+    }
     d = create_driver %[
       tag foo.bar
       key_name foo
