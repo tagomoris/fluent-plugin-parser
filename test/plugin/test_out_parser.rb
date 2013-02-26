@@ -72,7 +72,7 @@ class ParserOutputTest < Test::Unit::TestCase
         tag hogelog
         format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
         key_name message
-        unmatch_silent true
+        suppress_parse_error_log true
       ]
     }
     assert_nothing_raised {
@@ -80,7 +80,7 @@ class ParserOutputTest < Test::Unit::TestCase
         tag hogelog
         format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
         key_name message
-        unmatch_silent false
+        suppress_parse_error_log false
       ]
     }
     d = create_driver %[
@@ -385,4 +385,82 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_nil emits[0][2]['data']
     assert_equal '?'.force_encoding('US-ASCII'), emits[0][2]['message']
   end
+
+  # suppress_parse_error_log test 
+  CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG = %[
+    tag hogelog
+    format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+    key_name message
+    suppress_parse_error_log false 
+  ]
+  CONFIG_ENABELED_SUPPRESS_PARSE_ERROR_LOG = %[
+    tag hogelog
+    format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+    key_name message
+    suppress_parse_error_log true 
+  ]
+  CONFIG_DEFAULT_SUPPRESS_PARSE_ERROR_LOG = %[
+    tag hogelog
+    format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
+    key_name message
+  ]
+
+  INVALID_MESSAGE = 'foo bar'
+  VALID_MESSAGE   = 'col1=foo col2=bar'
+
+  # if call warn() raise exception
+  class DummyLoggerWarnedException < StandardError; end
+  class DummyLogger
+    def warn(message)
+      raise DummyLoggerWarnedException
+    end
+  end
+
+  def test_suppress_parse_error_log
+    # default(disabled) 'suppress_parse_error_log' is not specify
+    d = create_driver(CONFIG_DEFAULT_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
+
+    saved_logger = $log
+    $log = DummyLogger.new
+
+    assert_raise(DummyLoggerWarnedException) {
+      d.run do
+        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+      end
+    }
+
+    assert_nothing_raised {
+      d.run do
+        d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
+      end
+    }
+
+    # disabled 'suppress_parse_error_log'
+    d = create_driver(CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
+
+    assert_raise(DummyLoggerWarnedException) {
+      d.run do
+        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+      end
+    }
+
+    assert_nothing_raised {
+      d.run do
+        d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
+      end
+    }
+
+    # enabled 'suppress_parse_error_log'
+    d = create_driver(CONFIG_ENABELED_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
+
+    assert_nothing_raised {
+      d.run do
+        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+        d.emit({'message' => VALID_MESSAGE},   Time.now.to_i)
+      end
+    }
+
+    $log = saved_logger
+  end
+
 end

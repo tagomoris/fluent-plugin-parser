@@ -67,7 +67,7 @@ Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
 
 About LTSV, see: http://ltsv.org/
 
-If you want to suppress 'pattern not match' log, specify 'unmatch_silent true' to configuration.
+If you want to suppress 'pattern not match' log, specify 'suppress_parse_error_log true' to configuration.
 default value is false.
 
     <match in.hogelog>
@@ -75,7 +75,7 @@ default value is false.
       tag hogelog
       format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
       key_name message
-      unmatch_silent true
+      suppress_parse_error_log true
     </match>
 
 
