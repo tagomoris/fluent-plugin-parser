@@ -22,6 +22,13 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_raise(Fluent::ConfigError) {
       d = create_driver('')
     }
+    assert_raise(Fluent::ConfigError) {
+      d = create_driver %[
+        tag foo.bar
+        format unknown_format_that_will_never_be_implemented
+        key_name foo
+      ]
+    }
     assert_nothing_raised {
       d = create_driver %[
         tag foo.bar

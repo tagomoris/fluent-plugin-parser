@@ -228,7 +228,7 @@ class FluentExt::TextParser
       # built-in template
       factory = TEMPLATE_FACTORIES[format]
       unless factory
-        raise ConfigError, "Unknown format template '#{format}'"
+        raise Fluent::ConfigError, "Unknown format template '#{format}'"
       end
       @parser = factory.call
 
