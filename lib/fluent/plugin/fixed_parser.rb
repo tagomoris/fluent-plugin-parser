@@ -141,25 +141,25 @@ class FluentExt::TextParser
 
       user = m['user']
       user = (user == '-') ? nil : user
-      
+
       time = m['time']
       time = Time.strptime(time, "%d/%b/%Y:%H:%M:%S %z").to_i
-      
+
       method = m['method']
       path = m['path']
-      
-      code = m['code'].to_i 
+
+      code = m['code'].to_i
       code = nil if code == 0
 
       size = m['size']
       size = (size == '-') ? nil : size.to_i
-      
+
       referer = m['referer']
       referer = (referer == '-') ? nil : referer
-      
+
       agent = m['agent']
       agent = (agent == '-') ? nil : agent
-      
+
       record = {
         "host" => host,
         "user" => user,
@@ -169,7 +169,7 @@ class FluentExt::TextParser
         "size" => size,
         "referer" => referer,
         "agent" => agent,
-      } 
+      }
 
       return time, record
     end
@@ -187,7 +187,7 @@ class FluentExt::TextParser
   }
 
   def self.register_template(name, regexp_or_proc, time_format=nil)
-    
+
     factory = if regexp_or_proc.is_a?(Regexp)
                 regexp = regexp_or_proc
                 Proc.new { RegexpParser.new(regexp, {'time_format'=>time_format}) }

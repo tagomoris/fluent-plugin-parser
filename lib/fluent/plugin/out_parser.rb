@@ -8,6 +8,7 @@ class Fluent::ParserOutput < Fluent::Output
   config_param :add_prefix, :string, :default => nil
   config_param :key_name, :string
   config_param :reserve_data, :bool, :default => false
+  config_param :inject_key_prefix, :string, :default => nil
   config_param :replace_invalid_sequence, :bool, :default => false
 
   def initialize
@@ -43,8 +44,8 @@ class Fluent::ParserOutput < Fluent::Output
             if @remove_prefix and
                 ( (tag.start_with?(@removed_prefix_string) and tag.length > @removed_length) or tag == @remove_prefix)
               tag = tag[@removed_length..-1]
-            end 
-            if @add_prefix 
+            end
+            if @add_prefix
               tag = if tag and tag.length > 0
                       @added_prefix_string + tag
                     else
@@ -63,6 +64,9 @@ class Fluent::ParserOutput < Fluent::Output
                    end
         t ||= time
         r = if values
+              if @inject_key_prefix
+                values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
+              end
               record.merge(values)
             else
               record
@@ -73,7 +77,11 @@ class Fluent::ParserOutput < Fluent::Output
       es.each {|time,record|
         value = record[@key_name]
         t,values = if value
-                     parse(value)
+                     parsed = parse(value)
+                     if @inject_key_prefix
+                       parsed = Hash[parsed.map{|k,v| [ @inject_key_prefix + k, v ]}]
+                     end
+                     parsed
                    else
                      [nil, nil]
                    end

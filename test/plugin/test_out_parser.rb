@@ -4,7 +4,7 @@ class ParserOutputTest < Test::Unit::TestCase
   def setup
     Fluent::Test.setup
   end
-  
+
   CONFIG = %[
     remove_prefix test
     add_prefix    parsed
@@ -292,7 +292,7 @@ class ParserOutputTest < Test::Unit::TestCase
     key_name data
     keys key1,key2,key3
   ]
-  def test_emit_ltsv
+  def test_emit_tsv
     d = create_driver(CONFIG_TSV, 'foo.baz.test')
     time = Time.parse("2012-04-02 18:20:59").to_i
     d.run do
@@ -317,7 +317,7 @@ class ParserOutputTest < Test::Unit::TestCase
     key_name data
     keys key1,key2,key3
   ]
-  def test_emit_ltsv
+  def test_emit_csv
     d = create_driver(CONFIG_CSV, 'foo.baz.test')
     time = Time.parse("2012-04-02 18:20:59").to_i
     d.run do
@@ -333,6 +333,35 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal 'value1', first[2]['key1']
     assert_equal 'value2', first[2]['key2']
     assert_equal 'value"ThreeYes!', first[2]['key3']
+  end
+
+  CONFIG_KEY_PREFIX = %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format       json
+    key_name     data
+    reserve_data yes
+    inject_key_prefix data.
+  ]
+  def test_inject_key_prefix
+    d = create_driver(CONFIG_KEY_PREFIX, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => '{"xxx":"first","yyy":"second"}', 'xxx' => 'x', 'yyy' => 'y'}, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+
+    assert_equal '{"xxx":"first","yyy":"second"}', first[2]['data']
+    assert_equal 'x', first[2]['xxx']
+    assert_equal 'y', first[2]['yyy']
+    assert_equal 'first', first[2]['data.xxx']
+    assert_equal 'second', first[2]['data.yyy']
+    assert_equal 5, first[2].keys.size
   end
 
   #TODO: apache2
@@ -393,18 +422,18 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal '?'.force_encoding('US-ASCII'), emits[0][2]['message']
   end
 
-  # suppress_parse_error_log test 
+  # suppress_parse_error_log test
   CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG = %[
     tag hogelog
     format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
     key_name message
-    suppress_parse_error_log false 
+    suppress_parse_error_log false
   ]
   CONFIG_ENABELED_SUPPRESS_PARSE_ERROR_LOG = %[
     tag hogelog
     format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
     key_name message
-    suppress_parse_error_log true 
+    suppress_parse_error_log true
   ]
   CONFIG_DEFAULT_SUPPRESS_PARSE_ERROR_LOG = %[
     tag hogelog

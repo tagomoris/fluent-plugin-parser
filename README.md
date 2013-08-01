@@ -67,7 +67,7 @@ Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
 
 About LTSV, see: http://ltsv.org/
 
-If you want to suppress 'pattern not match' log, specify 'suppress_parse_error_log true' to configuration.
+If you want to suppress 'pattern not match' log, specify 'suppress\_parse\_error\_log true' to configuration.
 default value is false.
 
     <match in.hogelog>
@@ -78,6 +78,18 @@ default value is false.
       suppress_parse_error_log true
     </match>
 
+To store parsed values with specified key name prefix, use `inject_key_prefix` option:
+
+    <match raw.sales.*>
+      type parser
+      tag sales
+      format json
+      key_name sales
+      reserve_data      yes
+      inject_key_prefix sales.
+    </match>
+    # input string of 'sales': {"user":1,"num":2}
+    # output data: {"sales":"{\"user\":1,\"num\":2}","sales.user":1, "sales.num":2}
 
 ### DeparserOutput
 
