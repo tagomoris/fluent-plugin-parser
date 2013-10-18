@@ -91,6 +91,22 @@ To store parsed values with specified key name prefix, use `inject_key_prefix` o
     # input string of 'sales': {"user":1,"num":2}
     # output data: {"sales":"{\"user\":1,\"num\":2}","sales.user":1, "sales.num":2}
 
+To store parsed values as a hash value in a field, use `hash_value_field` option:
+
+    <match raw.sales.*>
+      type parser
+      tag sales
+      format json
+      key_name sales
+      hash_value_field parsed
+    </match>
+    # input string of 'sales': {"user":1,"num":2}
+    # output data: {"parsed":{"user":1, "num":2}}
+
+Other options (ex: `reserve_data`, `inject_key_prefix`) are available with `hash_value_field`.
+
+    # output data: {"sales":"{\"user\":1,\"num\":2}", "parsed":{"sales.user":1, "sales.num":2}}
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:

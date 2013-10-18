@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
 Gem::Specification.new do |gem|
   gem.name          = "fluent-plugin-parser"
-  gem.version       = "0.2.4"
+  gem.version       = "0.3.0"
   gem.authors       = ["TAGOMORI Satoshi"]
   gem.email         = ["tagomoris@gmail.com"]
   gem.description   = %q{fluentd plugin to parse single field, or to combine log structure into single field}
