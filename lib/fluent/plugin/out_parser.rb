@@ -10,6 +10,7 @@ class Fluent::ParserOutput < Fluent::Output
   config_param :reserve_data, :bool, :default => false
   config_param :inject_key_prefix, :string, :default => nil
   config_param :replace_invalid_sequence, :bool, :default => false
+  config_param :hash_value_field, :string, :default => nil
 
   def initialize
     super
@@ -54,43 +55,23 @@ class Fluent::ParserOutput < Fluent::Output
             end
             tag
           end
-    if @reserve_data
-      es.each {|time,record|
-        value = record[@key_name]
-        t,values = if value
-                     parse(value)
-                   else
-                     [nil, nil]
-                   end
-        t ||= time
-        r = if values
-              if @inject_key_prefix
-                values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
-              end
-              record.merge(values)
-            else
-              record
-            end
+    es.each do |time,record|
+      raw_value = record[@key_name]
+      t,values = raw_value ? parse(raw_value) : [nil, nil]
+      t ||= time
+
+      if values && @inject_key_prefix
+        values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
+      end
+      r = @hash_value_field ? {@hash_value_field => values} : values
+      if @reserve_data
+        r = r ? record.merge(r) : record
+      end
+      if r
         Fluent::Engine.emit(tag, t, r)
-      }
-    else
-      es.each {|time,record|
-        value = record[@key_name]
-        t,values = if value
-                     parsed = parse(value)
-                     if @inject_key_prefix
-                       parsed = Hash[parsed.map{|k,v| [ @inject_key_prefix + k, v ]}]
-                     end
-                     parsed
-                   else
-                     [nil, nil]
-                   end
-        t ||= time
-        if values
-          Fluent::Engine.emit(tag, t, values)
-        end
-      }
+      end
     end
+
     chain.next
   end
 

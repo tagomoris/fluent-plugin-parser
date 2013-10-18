@@ -364,6 +364,84 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal 5, first[2].keys.size
   end
 
+  CONFIG_HASH_VALUE_FIELD = %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format       json
+    key_name     data
+    hash_value_field parsed
+  ]
+  CONFIG_HASH_VALUE_FIELD_RESERVE_DATA = %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format       json
+    key_name     data
+    reserve_data yes
+    hash_value_field parsed
+  ]
+  CONFIG_HASH_VALUE_FIELD_WITH_INJECT_KEY_PREFIX = %[
+    remove_prefix foo.baz
+    add_prefix foo.bar
+    format       json
+    key_name     data
+    hash_value_field parsed
+    inject_key_prefix data.
+  ]
+  def test_inject_hash_value_field
+    original = {'data' => '{"xxx":"first","yyy":"second"}', 'xxx' => 'x', 'yyy' => 'y'}
+
+    d = create_driver(CONFIG_HASH_VALUE_FIELD, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit(original, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+
+    record = first[2]
+    assert_equal 1, record.keys.size
+    assert_equal({"xxx"=>"first","yyy"=>"second"}, record['parsed'])
+
+    d = create_driver(CONFIG_HASH_VALUE_FIELD_RESERVE_DATA, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit(original, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+
+    record = first[2]
+    assert_equal 4, record.keys.size
+    assert_equal original['data'], record['data']
+    assert_equal original['xxx'], record['xxx']
+    assert_equal original['yyy'], record['yyy']
+    assert_equal({"xxx"=>"first","yyy"=>"second"}, record['parsed'])
+
+    d = create_driver(CONFIG_HASH_VALUE_FIELD_WITH_INJECT_KEY_PREFIX, 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit(original, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+
+    record = first[2]
+    assert_equal 1, record.keys.size
+    assert_equal({"data.xxx"=>"first","data.yyy"=>"second"}, record['parsed'])
+  end
+
   #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 
