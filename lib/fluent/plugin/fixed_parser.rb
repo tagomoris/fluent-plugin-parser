@@ -4,10 +4,40 @@
 module FluentExt; end
 
 class FluentExt::TextParser
-  class RegexpParser
+  class GenericParser
     include Fluent::Configurable
 
+    config_param :time_key, :string, :default => 'time'
     config_param :time_format, :string, :default => nil
+    config_param :time_parse, :bool, :default => true
+
+    def parse_time(record)
+      time = nil
+
+      unless @time_parse
+        return time, record
+      end
+
+      if value = record.delete(@time_key)
+        begin
+          time = if @time_format
+                   Time.strptime(value, @time_format).to_i
+                 else
+                   Time.parse(value).to_i
+                 end
+        rescue TypeError, ArgumentError => e
+          $log.warn "Failed to parse time", :key => @time_key, :value => value
+          record[@time_key] = value
+        end
+      end
+
+      return time, record
+    end
+  end
+
+  class RegexpParser < GenericParser
+    include Fluent::Configurable
+
     config_param :suppress_parse_error_log, :bool, :default => false
 
     def initialize(regexp, conf={})
@@ -28,44 +58,11 @@ class FluentExt::TextParser
         return nil, nil
       end
 
-      time = nil
       record = {}
-
       m.names.each {|name|
-        if value = m[name]
-          case name
-          when "time"
-            if @time_format
-              time = Time.strptime(value, @time_format).to_i
-            else
-              time = Time.parse(value).to_i
-            end
-          else
-            record[name] = value
-          end
-        end
+        record[name] = m[name] if m[name]
       }
-
-      return time, record
-    end
-  end
-
-  class GenericParser
-    include Fluent::Configurable
-
-    config_param :time_key, :string, :default => 'time'
-    config_param :time_format, :string, :default => nil
-
-    def parse_time(record)
-      time = nil
-      if value = record.delete(@time_key)
-        time = if @time_format
-                 Time.strptime(value, @time_format).to_i
-               else
-                 Time.parse(value).to_i
-               end
-      end
-      return time, record
+      parse_time(record)
     end
   end
 

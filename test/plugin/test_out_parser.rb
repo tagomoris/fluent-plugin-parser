@@ -442,6 +442,72 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal({"data.xxx"=>"first","data.yyy"=>"second"}, record['parsed'])
   end
 
+  CONFIG_DONT_PARSE_TIME = %[
+    remove_prefix test
+    key_name data
+    format json
+    time_parse no
+  ]
+  def test_time_should_be_reserved
+    t = Time.now.to_i
+    d = create_driver(CONFIG_DONT_PARSE_TIME, 'test.in')
+
+    assert_equal false, d.instance.instance_eval{ @parser }.instance_eval{ @parser }.time_parse
+
+    d.run do
+      d.emit({'data' => '{"time":1383190430, "f1":"v1"}'}, t)
+      d.emit({'data' => '{"time":"1383190430", "f1":"v1"}'}, t)
+      d.emit({'data' => '{"time":"2013-10-31 12:34:03 +0900", "f1":"v1"}'}, t)
+    end
+    emits = d.emits
+    assert_equal 3, emits.length
+
+    assert_equal 'in', emits[0][0]
+    assert_equal 'v1', emits[0][2]['f1']
+    assert_equal 1383190430, emits[0][2]['time']
+    assert_equal t, emits[0][1]
+
+    assert_equal 'in', emits[1][0]
+    assert_equal 'v1', emits[1][2]['f1']
+    assert_equal "1383190430", emits[1][2]['time']
+    assert_equal t, emits[1][1]
+
+    assert_equal 'in', emits[2][0]
+    assert_equal 'v1', emits[2][2]['f1']
+    assert_equal '2013-10-31 12:34:03 +0900', emits[2][2]['time']
+    assert_equal t, emits[2][1]
+  end
+
+  CONFIG_INVALID_TIME_VALUE = %[
+    remove_prefix test
+    key_name data
+    format json
+  ] # 'time' is implicit @time_key
+  def test_invalid_time_data
+    # should not raise errors
+    t = Time.now.to_i
+    d = create_driver(CONFIG_INVALID_TIME_VALUE, 'test.in')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'data' => '{"time":[], "f1":"v1"}'}, t)
+        d.emit({'data' => '{"time":"thisisnottime", "f1":"v1"}'}, t)
+      end
+    }
+    emits = d.emits
+    assert_equal 2, emits.length
+
+    assert_equal 'in', emits[0][0]
+    assert_equal t, emits[0][1]
+    assert_equal 'v1', emits[0][2]['f1']
+    assert_equal [], emits[0][2]['time']
+
+    assert_equal 'in', emits[1][0]
+    assert_equal t, emits[1][1]
+    assert_equal 'v1', emits[1][2]['f1']
+    assert_equal 'thisisnottime', emits[1][2]['time']
+  end
+
+
   #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 

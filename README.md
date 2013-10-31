@@ -107,6 +107,19 @@ Other options (ex: `reserve_data`, `inject_key_prefix`) are available with `hash
 
     # output data: {"sales":"{\"user\":1,\"num\":2}", "parsed":{"sales.user":1, "sales.num":2}}
 
+Not to parse times (reserve that field like 'time' in record), specify `time_parse no`:
+
+    <match raw.sales.*>
+      type parser
+      tag sales
+      format json
+      key_name sales
+      hash_value_field parsed
+      time_parse no
+    </match>
+    # input string of 'sales': {"user":1,"num":2,"time":"2013-10-31 12:48:33"}
+    # output data: {"parsed":{"user":1, "num":2,"time":"2013-10-31 12:48:33"}}
+
 ### DeparserOutput
 
 To build CSV from field 'store','item','num', as field 'csv', without raw data:
@@ -137,5 +150,7 @@ To build same CSV, as additional field 'csv', with reserved raw fields:
 
 ## Copyright
 
-Copyright:: Copyright (c) 2012- TAGOMORI Satoshi (tagomoris)
-License::   Apache License, Version 2.0
+* Copyright
+  * Copyright (c) 2012- TAGOMORI Satoshi (tagomoris)
+* License
+  * Apache License, Version 2.0
