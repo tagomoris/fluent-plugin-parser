@@ -1,4 +1,4 @@
-# fluent-plugin-parser
+# fluent-plugin-parser, a plugin for [Fluentd](http://fluentd.org)
 
 ## Component
 
