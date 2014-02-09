@@ -4,7 +4,8 @@
 
 ### ParserOutput
 
-Parse string in log message, and re-emit.
+This is a [Fluentd](http://fluentd.org) plugin to parse strings in log messages
+and re-emit them.
 
 ### DeparserOutput
 
