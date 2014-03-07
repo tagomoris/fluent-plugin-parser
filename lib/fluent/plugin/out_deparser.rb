@@ -18,6 +18,11 @@ class Fluent::DeparserOutput < Fluent::Output
     chain.next
   end
 
+  # Define `log` method for v0.10.42 or earlier
+  unless method_defined?(:log)
+    define_method("log") { $log }
+  end
+
   def configure(conf)
     if conf['tag'] == 'april.fool'
       conf['format'] = '%s'
