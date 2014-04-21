@@ -48,7 +48,7 @@ class FluentExt::TextParser
             @cache2_key = value
             @cache2_time = time
           rescue TypeError, ArgumentError => e
-            $log.warn "Failed to parse time", :key => @time_key, :value => value
+            @log.warn "Failed to parse time", :key => @time_key, :value => value
             record[@time_key] = value
           end
         end
@@ -75,7 +75,7 @@ class FluentExt::TextParser
       m = @regexp.match(text)
       unless m
         unless @suppress_parse_error_log
-          $log.warn "pattern not match: #{text}"
+          @log.warn "pattern not match: #{text}"
         end
 
         return nil, nil
@@ -95,7 +95,7 @@ class FluentExt::TextParser
       return parse_time(record)
     rescue Yajl::ParseError
       unless @suppress_parse_error_log
-        $log.warn "pattern not match(json): #{text.inspect}: #{$!}"
+        @log.warn "pattern not match(json): #{text.inspect}: #{$!}"
       end
 
       return nil, nil
@@ -157,7 +157,7 @@ class FluentExt::TextParser
       m = REGEXP.match(text)
       unless m
         unless @suppress_parse_error_log
-          $log.warn "pattern not match: #{text.inspect}"
+          @log.warn "pattern not match: #{text.inspect}"
         end
 
         return nil, nil
@@ -224,7 +224,11 @@ class FluentExt::TextParser
     TEMPLATE_FACTORIES[name] = factory
   end
 
-  def initialize
+  attr_accessor :log
+  attr_reader :parser
+
+  def initialize(logger)
+    @log = logger
     @parser = nil
   end
 
@@ -260,6 +264,8 @@ class FluentExt::TextParser
       @parser = factory.call
 
     end
+
+    @parser.log = @log
 
     if @parser.respond_to?(:configure)
       @parser.configure(conf)

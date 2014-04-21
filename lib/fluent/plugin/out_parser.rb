@@ -12,6 +12,8 @@ class Fluent::ParserOutput < Fluent::Output
   config_param :replace_invalid_sequence, :bool, :default => false
   config_param :hash_value_field, :string, :default => nil
 
+  attr_reader :parser
+
   def initialize
     super
     require 'time'
@@ -39,7 +41,7 @@ class Fluent::ParserOutput < Fluent::Output
       @added_prefix_string = @add_prefix + '.'
     end
 
-    @parser = FluentExt::TextParser.new
+    @parser = FluentExt::TextParser.new(log())
     @parser.configure(conf)
   end
 

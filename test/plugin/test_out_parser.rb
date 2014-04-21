@@ -617,51 +617,74 @@ class ParserOutputTest < Test::Unit::TestCase
     end
   end
 
+  def swap_logger(instance)
+    raise "use with block" unless block_given?
+    parser_logger = instance.parser.log
+    dummy = DummyLogger.new
+    instance.parser.log = dummy
+    instance.parser.parser.log = dummy
+
+    restore = if instance.respond_to?("log=".to_sym)
+                saved_logger = instance.log
+                instance.log = dummy
+                lambda{ instance.log = saved_logger; instance.parser.log = instance.parser.parser.log = parser_logger }
+              else
+                saved_logger = $log
+                $log = dummy
+                lambda{ $log = saved_logger; instance.parser.log = instance.parser.parser.log = parser_logger }
+              end
+
+    yield
+
+    restore.call
+  end
+
   def test_suppress_parse_error_log
     # default(disabled) 'suppress_parse_error_log' is not specify
     d = create_driver(CONFIG_DEFAULT_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
 
-    saved_logger = $log
-    $log = DummyLogger.new
+    swap_logger(d.instance) do
+      assert_raise(DummyLoggerWarnedException) {
+        d.run do
+          d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+        end
+      }
 
-    assert_raise(DummyLoggerWarnedException) {
-      d.run do
-        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
-      end
-    }
-
-    assert_nothing_raised {
-      d.run do
-        d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
-      end
-    }
+      assert_nothing_raised {
+        d.run do
+          d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
+        end
+      }
+    end
 
     # disabled 'suppress_parse_error_log'
     d = create_driver(CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
 
-    assert_raise(DummyLoggerWarnedException) {
-      d.run do
-        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
-      end
-    }
+    swap_logger(d.instance) do
+      assert_raise(DummyLoggerWarnedException) {
+        d.run do
+          d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+        end
+      }
 
-    assert_nothing_raised {
-      d.run do
-        d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
-      end
-    }
+      assert_nothing_raised {
+        d.run do
+          d.emit({'message' => VALID_MESSAGE}, Time.now.to_i)
+        end
+      }
+    end
 
     # enabled 'suppress_parse_error_log'
     d = create_driver(CONFIG_ENABELED_SUPPRESS_PARSE_ERROR_LOG, 'test.in')
 
-    assert_nothing_raised {
-      d.run do
-        d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
-        d.emit({'message' => VALID_MESSAGE},   Time.now.to_i)
-      end
-    }
-
-    $log = saved_logger
+    swap_logger(d.instance) do
+      assert_nothing_raised {
+        d.run do
+          d.emit({'message' => INVALID_MESSAGE}, Time.now.to_i)
+          d.emit({'message' => VALID_MESSAGE},   Time.now.to_i)
+        end
+      }
+    end
   end
 
 end
