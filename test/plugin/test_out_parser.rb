@@ -112,9 +112,12 @@ class ParserOutputTest < Test::Unit::TestCase
     d1.run do
       d1.emit({'message' => '12 20120402182059'}, time)
       d1.emit({'message' => '34 20120402182100'}, time)
+      d1.emit({'message' => '56 20120402182100'}, time)
+      d1.emit({'message' => '78 20120402182101'}, time)
+      d1.emit({'message' => '90 20120402182100'}, time)
     end
     emits = d1.emits
-    assert_equal 2, emits.length
+    assert_equal 5, emits.length
 
     first = emits[0]
     assert_equal 'parsed.in', first[0]
@@ -128,6 +131,24 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal Time.parse("2012-04-02 18:21:00").to_i, second[1]
     assert_equal '3', second[2]['x']
     assert_equal '4', second[2]['y']
+
+    third = emits[2]
+    assert_equal 'parsed.in', third[0]
+    assert_equal Time.parse("2012-04-02 18:21:00").to_i, third[1]
+    assert_equal '5', third[2]['x']
+    assert_equal '6', third[2]['y']
+
+    fourth = emits[3]
+    assert_equal 'parsed.in', fourth[0]
+    assert_equal Time.parse("2012-04-02 18:21:01").to_i, fourth[1]
+    assert_equal '7', fourth[2]['x']
+    assert_equal '8', fourth[2]['y']
+
+    fifth = emits[4]
+    assert_equal 'parsed.in', fifth[0]
+    assert_equal Time.parse("2012-04-02 18:21:00").to_i, fifth[1]
+    assert_equal '9', fifth[2]['x']
+    assert_equal '0', fifth[2]['y']
 
     d2 = create_driver(%[
       tag parsed
