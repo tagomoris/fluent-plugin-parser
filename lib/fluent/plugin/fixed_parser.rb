@@ -11,10 +11,18 @@ class FluentExt::TextParser
     config_param :time_format, :string, :default => nil
     config_param :time_parse, :bool, :default => true
 
-    @cache1_key = nil
-    @cache1_time = nil
-    @cache2_key = nil
-    @cache2_time = nil
+    attr_accessor :log
+
+    def initialize
+      super
+
+      @cache1_key = nil
+      @cache1_time = nil
+      @cache2_key = nil
+      @cache2_time = nil
+
+      @log = nil
+    end
 
     def parse_time(record)
       time = nil
@@ -133,10 +141,17 @@ class FluentExt::TextParser
     end
   end
 
-  class ApacheParser
+  class ApacheParser < GenericParser
     include Fluent::Configurable
 
     REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
+
+    def initialize
+      super
+
+      @time_key = "time"
+      @time_format = "%d/%b/%Y:%H:%M:%S %z"
+   end
 
     def call(text)
       m = REGEXP.match(text)
@@ -155,7 +170,6 @@ class FluentExt::TextParser
       user = (user == '-') ? nil : user
 
       time = m['time']
-      time = Time.strptime(time, "%d/%b/%Y:%H:%M:%S %z").to_i
 
       method = m['method']
       path = m['path']
@@ -173,6 +187,7 @@ class FluentExt::TextParser
       agent = (agent == '-') ? nil : agent
 
       record = {
+        "time" => time,
         "host" => host,
         "user" => user,
         "method" => method,
@@ -183,7 +198,7 @@ class FluentExt::TextParser
         "agent" => agent,
       }
 
-      return time, record
+      parse_time(record)
     end
   end
 
