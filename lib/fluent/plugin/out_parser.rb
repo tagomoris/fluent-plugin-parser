@@ -1,4 +1,5 @@
-require_relative './fixed_parser'
+# require_relative './fixed_parser'
+require 'fluent/parser'
 
 class Fluent::ParserOutput < Fluent::Output
   Fluent::Plugin.register_output('parser', self)
@@ -41,8 +42,11 @@ class Fluent::ParserOutput < Fluent::Output
       @added_prefix_string = @add_prefix + '.'
     end
 
-    @parser = FluentExt::TextParser.new(log())
+    @parser = Fluent::TextParser.new
+    @parser.parser.estimate_current_event = false
     @parser.configure(conf)
+
+    self
   end
 
   def emit(tag, es, chain)
