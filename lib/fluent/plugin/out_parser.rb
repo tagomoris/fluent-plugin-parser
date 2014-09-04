@@ -1,4 +1,3 @@
-# require_relative './fixed_parser'
 require 'fluent/parser'
 
 class Fluent::ParserOutput < Fluent::Output
@@ -12,17 +11,14 @@ class Fluent::ParserOutput < Fluent::Output
   config_param :inject_key_prefix, :string, :default => nil
   config_param :replace_invalid_sequence, :bool, :default => false
   config_param :hash_value_field, :string, :default => nil
+  config_param :suppress_parse_error_log, :bool, :default => false
+  config_param :time_parse, :bool, :default => true
 
   attr_reader :parser
 
   def initialize
     super
     require 'time'
-  end
-
-  # Define `log` method for v0.10.42 or earlier
-  unless method_defined?(:log)
-    define_method("log") { $log }
   end
 
   def configure(conf)
@@ -43,8 +39,12 @@ class Fluent::ParserOutput < Fluent::Output
     end
 
     @parser = Fluent::TextParser.new
-    @parser.parser.estimate_current_event = false
     @parser.configure(conf)
+    @parser.parser.estimate_current_event = false
+    if !@time_parse && @parser.parser.respond_to?("time_key=".to_sym)
+      # disable parse time
+      @parser.parser.time_key = nil
+    end
 
     self
   end
@@ -80,6 +80,8 @@ class Fluent::ParserOutput < Fluent::Output
       end
       if r
         Fluent::Engine.emit(tag, t, r)
+      else
+        log.warn "pattern not match #{raw_value}" unless @suppress_parse_error_log
       end
     end
 
@@ -89,17 +91,22 @@ class Fluent::ParserOutput < Fluent::Output
   private
 
   def parse(string)
-    return @parser.parse(string) unless @replace_invalid_sequence
-
     begin
-      @parser.parse(string)
+      time, record = @parser.parse(string)
     rescue ArgumentError => e
-      unless e.message.index("invalid byte sequence in") == 0
+      if @replace_invalid_sequence
+        unless e.message.index("invalid byte sequence in") == 0
+          raise
+        end
+        replaced_string = replace_invalid_byte(string)
+        time, record = @parser.parse(replaced_string)
+      else
         raise
       end
-      replaced_string = replace_invalid_byte(string)
-      @parser.parse(replaced_string)
+    rescue => e
+      log.warn "parse failed #{e.message}" unless @suppress_parse_error_log
     end
+    return time, record
   end
 
   def replace_invalid_byte(string)
