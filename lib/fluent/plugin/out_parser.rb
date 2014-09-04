@@ -68,20 +68,26 @@ class Fluent::ParserOutput < Fluent::Output
           end
     es.each do |time,record|
       raw_value = record[@key_name]
-      t,values = raw_value ? parse(raw_value) : [nil, nil]
-      t ||= time
-
-      if values && @inject_key_prefix
-        values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
-      end
-      r = @hash_value_field ? {@hash_value_field => values} : values
-      if @reserve_data
-        r = r ? record.merge(r) : record
-      end
-      if r
-        Fluent::Engine.emit(tag, t, r)
-      else
-        log.warn "pattern not match #{raw_value}" unless @suppress_parse_error_log
+      begin
+        @parser.parse(raw_value) do |t,values|
+          t ||= time
+          handle_parsed(tag, record, t, values)
+        end
+      rescue ArgumentError => e
+        if @replace_invalid_sequence
+          unless e.message.index("invalid byte sequence in") == 0
+            raise
+          end
+          replaced_string = replace_invalid_byte(raw_value)
+          @parser.parse(replaced_string) do |t,values|
+            t ||= time
+            handle_parsed(tag, record, t, values)
+          end
+        else
+          raise
+        end
+      rescue => e
+        log.warn "parse failed #{e.message}" unless @suppress_parse_error_log
       end
     end
 
@@ -90,23 +96,19 @@ class Fluent::ParserOutput < Fluent::Output
 
   private
 
-  def parse(string)
-    begin
-      time, record = @parser.parse(string)
-    rescue ArgumentError => e
-      if @replace_invalid_sequence
-        unless e.message.index("invalid byte sequence in") == 0
-          raise
-        end
-        replaced_string = replace_invalid_byte(string)
-        time, record = @parser.parse(replaced_string)
-      else
-        raise
-      end
-    rescue => e
-      log.warn "parse failed #{e.message}" unless @suppress_parse_error_log
+  def handle_parsed(tag, record, t, values)
+    if values && @inject_key_prefix
+      values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
     end
-    return time, record
+    r = @hash_value_field ? {@hash_value_field => values} : values
+    if @reserve_data
+      r = r ? record.merge(r) : record
+    end
+    if r
+      Fluent::Engine.emit(tag, t, r)
+    else
+      log.warn "pattern not match #{raw_value}" unless @suppress_parse_error_log
+    end
   end
 
   def replace_invalid_byte(string)
