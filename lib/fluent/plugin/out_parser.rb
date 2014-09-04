@@ -39,8 +39,8 @@ class Fluent::ParserOutput < Fluent::Output
     end
 
     @parser = Fluent::TextParser.new
+    @parser.estimate_current_event = false
     @parser.configure(conf)
-    @parser.parser.estimate_current_event = false
     if !@time_parse && @parser.parser.respond_to?("time_key=".to_sym)
       # disable parse time
       @parser.parser.time_key = nil
