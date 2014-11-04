@@ -642,6 +642,17 @@ class ParserOutputTest < Test::Unit::TestCase
     restore.call
   end
 
+  def test_parser_error_warning
+    d = create_driver(CONFIG_INVALID_TIME_VALUE, 'test.in')
+    swap_logger(d.instance) do
+      assert_raise(DummyLoggerWarnedException) {
+        d.run do
+          d.emit({'data' => '{"time":[], "f1":"v1"}'}, Time.now.to_i)
+        end
+      }
+    end
+  end
+
   def test_suppress_parse_error_log
     # default(disabled) 'suppress_parse_error_log' is not specify
     d = create_driver(CONFIG_DEFAULT_SUPPRESS_PARSE_ERROR_LOG, 'test.in')

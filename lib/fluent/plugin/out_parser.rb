@@ -73,6 +73,8 @@ class Fluent::ParserOutput < Fluent::Output
           t ||= time
           handle_parsed(tag, record, t, values)
         end
+      rescue Fluent::TextParser::ParserError => e
+        log.warn e.message unless @suppress_parse_error_log
       rescue ArgumentError => e
         if @replace_invalid_sequence
           unless e.message.index("invalid byte sequence in") == 0
