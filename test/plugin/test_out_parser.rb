@@ -541,8 +541,6 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal 0, emits[0][2]['time'].to_i
   end
 
-
-  #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 
   CONFIG_NOT_REPLACE = %[
