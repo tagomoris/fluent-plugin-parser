@@ -34,6 +34,9 @@ Of course, you can use predefined format 'apache' and 'syslog':
       key_name message
     </match>
 
+`fluent-plugin-parser` uses parser plugins of Fluentd (and your own customized parser plugin).
+See document page for more details: http://docs.fluentd.org/articles/parser-plugin-overview
+
 If you want original attribute-data pair in re-emitted message, specify 'reserve_data':
 
     <match raw.apache.*>
@@ -43,30 +46,6 @@ If you want original attribute-data pair in re-emitted message, specify 'reserve
       key_name message
       reserve_data yes
     </match>
-
-Format 'json', 'csv' and 'tsv' is also supported:
-
-    <match raw.sales.*>
-      type parser
-      tag sales
-      format json
-      key_name sales
-    </match>
-
-Format 'ltsv'(Labeled-TSV (Tab separated values)) is also supported:
-
-    <match raw.sales.*>
-      type parser
-      tag sales
-      format ltsv
-      key_name sales
-    </match>
-
-'LTSV' is format like below, unlinke json, easy to write with simple formatter (ex: LogFormat of apache):
-
-    KEY1:VALUE1 [TAB] KEY2:VALUE2 [TAB] ...
-
-About LTSV, see: http://ltsv.org/
 
 If you want to suppress 'pattern not match' log, specify 'suppress\_parse\_error\_log true' to configuration.
 default value is false.
