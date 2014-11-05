@@ -304,6 +304,26 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal "xxx:first\tyyy:second", first[2]['data']
     assert_equal 'first', second[2]['xxx']
     assert_equal 'second2', second[2]['yyy']
+
+    # convert types
+    d = create_driver(CONFIG_LTSV + %[
+      types i:integer,s:string,f:float,b:bool
+    ], 'foo.baz.test')
+    time = Time.parse("2012-04-02 18:20:59").to_i
+    d.run do
+      d.emit({'data' => "i:1\ts:2\tf:3\tb:true\tx:123"}, time)
+    end
+    emits = d.emits
+    assert_equal 1, emits.length
+
+    first = emits[0]
+    assert_equal 'foo.bar.test', first[0]
+    assert_equal time, first[1]
+    assert_equal 1, first[2]['i']
+    assert_equal '2', first[2]['s']
+    assert_equal 3.0, first[2]['f']
+    assert_equal true, first[2]['b']
+    assert_equal '123', first[2]['x']
   end
 
   CONFIG_TSV =  %[
@@ -473,8 +493,6 @@ class ParserOutputTest < Test::Unit::TestCase
     t = Time.now.to_i
     d = create_driver(CONFIG_DONT_PARSE_TIME, 'test.in')
 
-    assert_equal false, d.instance.instance_eval{ @parser }.instance_eval{ @parser }.time_parse
-
     d.run do
       d.emit({'data' => '{"time":1383190430, "f1":"v1"}'}, t)
       d.emit({'data' => '{"time":"1383190430", "f1":"v1"}'}, t)
@@ -515,21 +533,14 @@ class ParserOutputTest < Test::Unit::TestCase
       end
     }
     emits = d.emits
-    assert_equal 2, emits.length
+    assert_equal 1, emits.length
 
     assert_equal 'in', emits[0][0]
-    assert_equal t, emits[0][1]
+    assert_equal 0, emits[0][1]
     assert_equal 'v1', emits[0][2]['f1']
-    assert_equal [], emits[0][2]['time']
-
-    assert_equal 'in', emits[1][0]
-    assert_equal t, emits[1][1]
-    assert_equal 'v1', emits[1][2]['f1']
-    assert_equal 'thisisnottime', emits[1][2]['time']
+    assert_equal 0, emits[0][2]['time'].to_i
   end
 
-
-  #TODO: apache2
   # REGEXP = /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)(?: "(?<referer>[^\"]*)" "(?<agent>[^\"]*)")?$/
 
   CONFIG_NOT_REPLACE = %[
@@ -619,24 +630,25 @@ class ParserOutputTest < Test::Unit::TestCase
 
   def swap_logger(instance)
     raise "use with block" unless block_given?
-    parser_logger = instance.parser.log
     dummy = DummyLogger.new
-    instance.parser.log = dummy
-    instance.parser.parser.log = dummy
-
-    restore = if instance.respond_to?("log=".to_sym)
-                saved_logger = instance.log
-                instance.log = dummy
-                lambda{ instance.log = saved_logger; instance.parser.log = instance.parser.parser.log = parser_logger }
-              else
-                saved_logger = $log
-                $log = dummy
-                lambda{ $log = saved_logger; instance.parser.log = instance.parser.parser.log = parser_logger }
-              end
+    saved_logger = instance.log
+    instance.log = dummy
+    restore = lambda{ instance.log = saved_logger }
 
     yield
 
     restore.call
+  end
+
+  def test_parser_error_warning
+    d = create_driver(CONFIG_INVALID_TIME_VALUE, 'test.in')
+    swap_logger(d.instance) do
+      assert_raise(DummyLoggerWarnedException) {
+        d.run do
+          d.emit({'data' => '{"time":[], "f1":"v1"}'}, Time.now.to_i)
+        end
+      }
+    end
   end
 
   def test_suppress_parse_error_log
