@@ -1,6 +1,8 @@
 module Fluent
   class TextParser
-    class KVPairParser
+    class KVPairParser < Parser
+      Plugin.register_parser('kv_pair', self)
+
       # key<delim1>value is pair and <pair><delim2><pair> ...
       # newline splits records
       include Configurable
@@ -16,7 +18,7 @@ module Fluent
         @time_parser = TimeParser.new(@time_format)
       end
 
-      def call(text)
+      def parse(text)
         text.split("\n").each do |line|
           pairs = text.split(@delim2)
           record = {}
@@ -33,7 +35,5 @@ module Fluent
         end
       end
     end
-
-    register_template("kv_pair", Proc.new { KVPairParser.new })
   end
 end
