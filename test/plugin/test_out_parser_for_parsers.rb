@@ -153,7 +153,7 @@ add_prefix    parsed
 key_name      message
 format        syslog
 EOF
-    time = Time.parse("2014-11-05 15:59:30").to_i
+    time = Time.parse("11/05 15:59:30").to_i # time is assumed as current year
     d.run do
       d.emit({"message" => logs[0]}, time)
       d.emit({"message" => logs[1]}, time)
@@ -165,7 +165,7 @@ EOF
 
     e = emits[0]
     assert_equal 'parsed.in', e[0]
-    assert_equal Time.parse("2014-11-05 16:19:48").to_i, e[1]
+    assert_equal Time.parse("11/05 16:19:48").to_i, e[1]
     r = e[2]
     assert_equal 'myhost.local', r['host']
     assert_equal 'netbiosd', r['ident']
@@ -174,7 +174,7 @@ EOF
 
     e = emits[1]
     assert_equal 'parsed.in', e[0]
-    assert_equal Time.parse("2014-11-05 16:21:20").to_i, e[1]
+    assert_equal Time.parse("11/05 16:21:20").to_i, e[1]
     r = e[2]
     assert_equal 'myhost.local', r['host']
     assert_equal 'coreaudiod', r['ident']
@@ -183,7 +183,7 @@ EOF
 
     e = emits[2]
     assert_equal 'parsed.in', e[0]
-    assert_equal Time.parse("2014-11-05 16:21:20").to_i, e[1]
+    assert_equal Time.parse("11/05 16:21:20").to_i, e[1]
     r = e[2]
     assert_equal 'myhost.local', r['host']
     assert_equal 'coreaudiod', r['ident']
