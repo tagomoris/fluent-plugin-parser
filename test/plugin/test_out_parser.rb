@@ -196,7 +196,7 @@ class ParserOutputTest < Test::Unit::TestCase
     d3x = create_driver(%[
       tag parsed
       key_name      data
-      format        /^(?<x>\d)(?<y>\d) (?<t>.+)$/
+      format        /^(?<x>\\d)(?<y>\\d) (?<t>.+)$/
       reserve_data  yes
     ], 'test.in')
     time = Time.parse("2012-04-02 18:20:59").to_i
