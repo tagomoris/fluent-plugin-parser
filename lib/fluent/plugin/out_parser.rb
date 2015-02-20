@@ -80,6 +80,10 @@ class Fluent::ParserOutput < Fluent::Output
             handle_parsed(tag, record, t, values)
           else
             log.warn "pattern not match with data '#{raw_value}'" unless @suppress_parse_error_log
+            if @reserve_data
+              t = time
+              handle_parsed(tag, record, time, {})
+            end
           end
         end
       rescue Fluent::TextParser::ParserError => e
@@ -96,6 +100,10 @@ class Fluent::ParserOutput < Fluent::Output
               handle_parsed(tag, record, t, values)
             else
               log.warn "pattern not match with data '#{raw_value}'" unless @suppress_parse_error_log
+              if @reserve_data
+                t = time
+                handle_parsed(tag, record, time, {})
+              end
             end
           end
         else
