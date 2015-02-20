@@ -75,8 +75,12 @@ class Fluent::ParserOutput < Fluent::Output
       raw_value = record[@key_name]
       begin
         @parser.parse(raw_value) do |t,values|
-          t ||= time
-          handle_parsed(tag, record, t, values)
+          if values
+            t ||= time
+            handle_parsed(tag, record, t, values)
+          else
+            log.warn "pattern not match with data '#{raw_value}'" unless @suppress_parse_error_log
+          end
         end
       rescue Fluent::TextParser::ParserError => e
         log.warn e.message unless @suppress_parse_error_log
@@ -87,8 +91,12 @@ class Fluent::ParserOutput < Fluent::Output
           end
           replaced_string = replace_invalid_byte(raw_value)
           @parser.parse(replaced_string) do |t,values|
-            t ||= time
-            handle_parsed(tag, record, t, values)
+            if values
+              t ||= time
+              handle_parsed(tag, record, t, values)
+            else
+              log.warn "pattern not match with data '#{raw_value}'" unless @suppress_parse_error_log
+            end
           end
         else
           raise
@@ -111,11 +119,7 @@ class Fluent::ParserOutput < Fluent::Output
     if @reserve_data
       r = r ? record.merge(r) : record
     end
-    if r
-      Fluent::Engine.emit(tag, t, r)
-    else
-      log.warn "pattern not match #{raw_value}" unless @suppress_parse_error_log
-    end
+    Fluent::Engine.emit(tag, t, r)
   end
 
   def replace_invalid_byte(string)
