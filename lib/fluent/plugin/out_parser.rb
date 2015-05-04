@@ -127,7 +127,7 @@ class Fluent::ParserOutput < Fluent::Output
     if @reserve_data
       r = r ? record.merge(r) : record
     end
-    Fluent::Engine.emit(tag, t, r)
+    router.emit(tag, t, r)
   end
 
   def replace_invalid_byte(string)

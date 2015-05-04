@@ -13,7 +13,7 @@ class Fluent::DeparserOutput < Fluent::Output
     es.each {|time,record|
       keys = record.keys.shuffle
       new_record = {@key_name => keys.map{|k| record[k]}.join(' ')}
-      Fluent::Engine.emit(@tag, time, new_record)
+      router.emit(@tag, time, new_record)
     }
     chain.next
   end
@@ -68,8 +68,8 @@ class Fluent::DeparserOutput < Fluent::Output
             if @remove_prefix and
                 ( (tag.start_with?(@removed_prefix_string) and tag.length > @removed_length) or tag == @remove_prefix)
               tag = tag[@removed_length..-1]
-            end 
-            if @add_prefix 
+            end
+            if @add_prefix
               tag = if tag and tag.length > 0
                       @added_prefix_string + tag
                     else
@@ -81,12 +81,12 @@ class Fluent::DeparserOutput < Fluent::Output
     if @reserve_data
       es.each {|time,record|
         record.update({@key_name => (@format % @format_key_names.map{|k| record[k]})})
-        Fluent::Engine.emit(tag, time, record)
+        router.emit(tag, time, record)
       }
     else
       es.each {|time,record|
         new_record = {@key_name => (@format % @format_key_names.map{|k| record[k]})}
-        Fluent::Engine.emit(tag, time, new_record)
+        router.emit(tag, time, new_record)
       }
     end
     chain.next
