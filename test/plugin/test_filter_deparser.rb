@@ -17,22 +17,14 @@ class DeparserFilterTest < Test::Unit::TestCase
   end
 
   def test_configure
-    assert_nothing_raised {
-      d = create_driver %[
-        tag april.fool
-      ]
-    }
-
     assert_raise(Fluent::ConfigError) {
       d = create_driver('')
     }
 
     d = create_driver %[
-      tag foo.bar
       format %s: %s %s
       format_key_names x,y,z
     ]
-    assert_equal 'foo.bar', d.instance.tag
     assert_equal '%s: %s %s', d.instance.format
     assert_equal ['x','y','z'], d.instance.format_key_names
     assert_equal 'message', d.instance.key_name
