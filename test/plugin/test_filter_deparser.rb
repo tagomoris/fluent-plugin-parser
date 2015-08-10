@@ -58,7 +58,6 @@ class DeparserFilterTest < Test::Unit::TestCase
     assert_equal ['fulltext','host','path','size','status'], second[2].keys.sort
 
     d2 = create_driver(%[
-      tag combined
       format %s: %s %s
       format_key_names host,path,status
     ], 'test.no.change')
