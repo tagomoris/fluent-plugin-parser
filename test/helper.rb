@@ -24,6 +24,7 @@ end
 
 require 'fluent/plugin/out_parser'
 require 'fluent/plugin/out_deparser'
+require 'fluent/plugin/filter_parser'
 
 class Test::Unit::TestCase
 end
