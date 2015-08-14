@@ -3,8 +3,8 @@ class Fluent::DeparserFilter < Fluent::Output
 
   config_param :format, :string
   config_param :format_key_names, :string
-  config_param :key_name, :string, :default => 'message'
-  config_param :reserve_data, :bool, :default => false
+  config_param :key_name, :string, default: 'message'
+  config_param :reserve_data, :bool, default: false
 
   def configure(conf)
     super

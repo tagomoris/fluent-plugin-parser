@@ -4,12 +4,12 @@ class Fluent::ParserFilter < Fluent::Filter
   Fluent::Plugin.register_filter('parser', self)
 
   config_param :key_name, :string
-  config_param :reserve_data, :bool, :default => false
-  config_param :inject_key_prefix, :string, :default => nil
-  config_param :replace_invalid_sequence, :bool, :default => false
-  config_param :hash_value_field, :string, :default => nil
-  config_param :suppress_parse_error_log, :bool, :default => false
-  config_param :time_parse, :bool, :default => true
+  config_param :reserve_data, :bool, default: false
+  config_param :inject_key_prefix, :string, default: nil
+  config_param :replace_invalid_sequence, :bool, default: false
+  config_param :hash_value_field, :string, default: nil
+  config_param :suppress_parse_error_log, :bool, default: false
+  config_param :time_parse, :bool, default: true
 
   attr_reader :parser
 
