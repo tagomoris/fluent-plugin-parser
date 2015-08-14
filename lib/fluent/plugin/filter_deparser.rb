@@ -21,8 +21,8 @@ class Fluent::DeparserFilter < Fluent::Output
     new_es = Fluent::MultiEventStream.new
     if @reserve_data
       es.each {|time,record|
-        record.update({@key_name => (@format % @format_key_names.map{|k| record[k]})})
-        new_es.add(time, record)
+        new_record = {@key_name => (@format % @format_key_names.map{|k| record[k]})}
+        new_es.add(time, record.merge(new_record))
       }
     else
       es.each {|time,record|
