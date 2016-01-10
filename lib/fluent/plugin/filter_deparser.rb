@@ -1,4 +1,4 @@
-class Fluent::DeparserFilter < Fluent::Output
+class Fluent::DeparserFilter < Fluent::Filter
   Fluent::Plugin.register_filter('deparser', self)
 
   config_param :format, :string
