@@ -18,7 +18,7 @@ Generate string log value from log message, with specified format and fields, an
 ParserOutput has just same with 'in_tail' about 'format' and 'time\_format':
 
     <match raw.apache.common.*>
-      type parser
+      @type parser
       remove_prefix raw
       format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)$/
       time_format %d/%b/%Y:%H:%M:%S %z
@@ -28,7 +28,7 @@ ParserOutput has just same with 'in_tail' about 'format' and 'time\_format':
 Of course, you can use predefined format 'apache' and 'syslog':
 
     <match raw.apache.combined.*>
-      type parser
+      @type parser
       remove_prefix raw
       format apache
       key_name message
@@ -40,7 +40,7 @@ See document page for more details: http://docs.fluentd.org/articles/parser-plug
 If you want original attribute-data pair in re-emitted message, specify 'reserve_data':
 
     <match raw.apache.*>
-      type parser
+      @type parser
       tag apache
       format apache
       key_name message
@@ -51,7 +51,7 @@ If you want to suppress 'pattern not match' log, specify 'suppress\_parse\_error
 default value is false.
 
     <match in.hogelog>
-      type parser
+      @type parser
       tag hogelog
       format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
       key_name message
@@ -61,7 +61,7 @@ default value is false.
 To store parsed values with specified key name prefix, use `inject_key_prefix` option:
 
     <match raw.sales.*>
-      type parser
+      @type parser
       tag sales
       format json
       key_name sales
@@ -74,7 +74,7 @@ To store parsed values with specified key name prefix, use `inject_key_prefix` o
 To store parsed values as a hash value in a field, use `hash_value_field` option:
 
     <match raw.sales.*>
-      type parser
+      @type parser
       tag sales
       format json
       key_name sales
@@ -105,7 +105,7 @@ Not to parse times (reserve that field like 'time' in record), specify `time_par
 To build CSV from field 'store','item','num', as field 'csv', without raw data:
 
     <match in.marketlog.**>
-      type deparser
+      @type deparser
       remove_prefix in
       format %s,%s,%s
       format_key_names store,item,num
@@ -115,7 +115,7 @@ To build CSV from field 'store','item','num', as field 'csv', without raw data:
 To build same CSV, as additional field 'csv', with reserved raw fields:
 
     <match in.marketlog>
-      type deparser
+      @type deparser
       tag marketlog
       format %s,%s,%s
       format_key_names store,item,num
@@ -132,7 +132,7 @@ Note that this filter version of parser plugin does not have modifing tag functi
 ParserFilter has just same with 'in_tail' about 'format' and 'time\_format':
 
     <filter raw.apache.common.*>
-      type parser
+      @type parser
       format /^(?<host>[^ ]*) [^ ]* (?<user>[^ ]*) \[(?<time>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^ ]*) +\S*)?" (?<code>[^ ]*) (?<size>[^ ]*)$/
       time_format %d/%b/%Y:%H:%M:%S %z
       key_name message
@@ -141,7 +141,7 @@ ParserFilter has just same with 'in_tail' about 'format' and 'time\_format':
 Of course, you can use predefined format 'apache' and 'syslog':
 
     <filter raw.apache.combined.*>
-      type parser
+      @type parser
       format apache
       key_name message
     </filter>
@@ -152,7 +152,7 @@ See document page for more details: http://docs.fluentd.org/articles/parser-plug
 If you want original attribute-data pair in re-emitted message, specify 'reserve_data':
 
     <filter raw.apache.*>
-      type parser
+      @type parser
       format apache
       key_name message
       reserve_data yes
@@ -162,7 +162,7 @@ If you want to suppress 'pattern not match' log, specify 'suppress\_parse\_error
 default value is false.
 
     <filter in.hogelog>
-      type parser
+      @type parser
       format /^col1=(?<col1>.+) col2=(?<col2>.+)$/
       key_name message
       suppress_parse_error_log true
@@ -171,7 +171,7 @@ default value is false.
 To store parsed values with specified key name prefix, use `inject_key_prefix` option:
 
     <filter raw.sales.*>
-      type parser
+      @type parser
       format json
       key_name sales
       reserve_data      yes
@@ -183,7 +183,7 @@ To store parsed values with specified key name prefix, use `inject_key_prefix` o
 To store parsed values as a hash value in a field, use `hash_value_field` option:
 
     <filter raw.sales.*>
-      type parser
+      @type parser
       tag sales
       format json
       key_name sales
@@ -199,7 +199,7 @@ Other options (ex: `reserve_data`, `inject_key_prefix`) are available with `hash
 Not to parse times (reserve that field like 'time' in record), specify `time_parse no`:
 
     <filter raw.sales.*>
-      type parser
+      @type parser
       format json
       key_name sales
       hash_value_field parsed
@@ -215,7 +215,7 @@ Note that this filter version of deparser plugin does not have modifing tag func
 To build CSV from field 'store','item','num', as field 'csv', without raw data:
 
     <filter in.marketlog.**>
-      type deparser
+      @type deparser
       format %s,%s,%s
       format_key_names store,item,num
       key_name csv
@@ -224,7 +224,7 @@ To build CSV from field 'store','item','num', as field 'csv', without raw data:
 To build same CSV, as additional field 'csv', with reserved raw fields:
 
     <filter in.marketlog>
-      type deparser
+      @type deparser
       format %s,%s,%s
       format_key_names store,item,num
       key_name csv
