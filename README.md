@@ -7,9 +7,17 @@
 This is a [Fluentd](http://fluentd.org) plugin to parse strings in log messages
 and re-emit them.
 
+### ParserFilter
+
+Filter version of ParserOutput. In fluentd v0.12 or later, ParserFilter is recommended for simple configuartion and better performance.
+
 ### DeparserOutput
 
 Generate string log value from log message, with specified format and fields, and re-emit.
+
+### DeparserFilter
+
+Filter version of DeparserOutput. In fluentd v0.12 or later, DeparserFilter is recommended for simple configuartion and better performance.
 
 ## Configuration
 
