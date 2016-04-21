@@ -10,6 +10,7 @@ class Fluent::ParserFilter < Fluent::Filter
   config_param :hash_value_field, :string, default: nil
   config_param :suppress_parse_error_log, :bool, default: false
   config_param :time_parse, :bool, default: true
+  config_param :ignore_key_not_exist, :bool, default: false
 
   attr_reader :parser
 
@@ -36,6 +37,10 @@ class Fluent::ParserFilter < Fluent::Filter
     new_es = Fluent::MultiEventStream.new
     es.each do |time,record|
       raw_value = record[@key_name]
+      if raw_value.nil? and @ignore_key_not_exist
+        new_es.add(time, handle_parsed(tag, record, time, {}))
+        next
+      end
       begin
         @parser.parse(raw_value) do |t,values|
           if values
@@ -90,7 +95,7 @@ class Fluent::ParserFilter < Fluent::Filter
       values = Hash[values.map{|k,v| [ @inject_key_prefix + k, v ]}]
     end
     r = @hash_value_field ? {@hash_value_field => values} : values
-    if @reserve_data
+    if @reserve_data or @ignore_key_not_exist
       r = r ? record.merge(r) : record
     end
     r

@@ -541,6 +541,35 @@ class ParserFilterTest < Test::Unit::TestCase
     assert_equal '?'.force_encoding('US-ASCII'), filtered[0][2]['message']
   end
 
+  CONFIG_NOT_IGNORE = %[
+    remove_prefix    test
+    key_name         data
+    format           json
+    hash_value_field parsed
+  ]
+  CONFIG_IGNORE = CONFIG_NOT_IGNORE + %[
+    ignore_key_not_exist true
+  ]
+  def test_filter_key_not_exist
+    d = create_driver(CONFIG_NOT_IGNORE, 'test.no.ignore')
+    assert_raise(ArgumentError) {
+      d.run do
+        d.filter({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+
+    d = create_driver(CONFIG_IGNORE, 'test.ignore')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+    filtered = d.filtered_as_array
+    assert_equal 1, filtered.length
+    assert_nil filtered[0][2]['data']
+    assert_equal 'bar', filtered[0][2]['foo']
+  end
+
   # suppress_parse_error_log test
   CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG = %[
     tag hogelog
