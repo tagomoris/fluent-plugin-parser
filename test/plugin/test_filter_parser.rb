@@ -550,18 +550,30 @@ class ParserFilterTest < Test::Unit::TestCase
   CONFIG_IGNORE = CONFIG_NOT_IGNORE + %[
     ignore_key_not_exist true
   ]
+  CONFIG_PASS_SAME_RECORD = CONFIG_IGNORE + %[
+    reserve_data true
+  ]
   def test_filter_key_not_exist
     d = create_driver(CONFIG_NOT_IGNORE, 'test.no.ignore')
-    assert_raise(ArgumentError) {
+    assert_nothing_raised {
       d.run do
         d.filter({'foo' => 'bar'}, Time.now.to_i)
       end
     }
+    assert_match /data does not exist/, d.instance.log.out.logs.first
 
     d = create_driver(CONFIG_IGNORE, 'test.ignore')
     assert_nothing_raised {
       d.run do
-        d.emit({'foo' => 'bar'}, Time.now.to_i)
+        d.filter({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+    assert_not_match /data does not exist/, d.instance.log.out.logs.first
+
+    d = create_driver(CONFIG_PASS_SAME_RECORD, 'test.pass_same_record')
+    assert_nothing_raised {
+      d.run do
+        d.filter({'foo' => 'bar'}, Time.now.to_i)
       end
     }
     filtered = d.filtered_as_array
