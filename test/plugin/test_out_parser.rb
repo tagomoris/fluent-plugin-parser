@@ -598,6 +598,47 @@ class ParserOutputTest < Test::Unit::TestCase
     assert_equal '?'.force_encoding('US-ASCII'), emits[0][2]['message']
   end
 
+  CONFIG_NOT_IGNORE = %[
+    remove_prefix    test
+    key_name         data
+    format           json
+    hash_value_field parsed
+  ]
+  CONFIG_IGNORE = CONFIG_NOT_IGNORE + %[
+    ignore_key_not_exist true
+  ]
+  CONFIG_EMIT_SAME_RECORD = CONFIG_IGNORE + %[
+    reserve_data true
+  ]
+  def test_emit_key_not_exist
+    d = create_driver(CONFIG_NOT_IGNORE, 'test.no.ignore')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+    assert_match /data does not exist/, d.instance.log.out.logs.first
+
+    d = create_driver(CONFIG_IGNORE, 'test.ignore')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+    assert_not_match /data does not exist/, d.instance.log.out.logs.first
+
+    d = create_driver(CONFIG_EMIT_SAME_RECORD, 'test.emit_same_record')
+    assert_nothing_raised {
+      d.run do
+        d.emit({'foo' => 'bar'}, Time.now.to_i)
+      end
+    }
+    emits = d.emits
+    assert_equal 1, emits.length
+    assert_nil emits[0][2]['data']
+    assert_equal 'bar', emits[0][2]['foo']
+  end
+
   # suppress_parse_error_log test
   CONFIG_DISABELED_SUPPRESS_PARSE_ERROR_LOG = %[
     tag hogelog

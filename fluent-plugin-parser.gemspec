@@ -16,5 +16,6 @@ Gem::Specification.new do |gem|
 
   gem.add_development_dependency "test-unit"
   gem.add_development_dependency "rake"
+  gem.add_development_dependency "oj"
   gem.add_runtime_dependency "fluentd", "~> 0.12.0"
 end
