@@ -607,6 +607,8 @@ class ParserFilterTest < Test::Unit::TestCase
   # if call warn() raise exception
   class DummyLoggerWarnedException < StandardError; end
   class DummyLogger
+    def reset
+    end
     def warn(message)
       raise DummyLoggerWarnedException
     end
