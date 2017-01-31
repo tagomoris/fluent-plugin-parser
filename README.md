@@ -1,5 +1,7 @@
 # fluent-plugin-parser
 
+**NOTE: This plugin is outdated for Fluentd v0.14 (Fluentd v0.14 has 'parser' filter plugin)**
+
 ## Component
 
 ### ParserOutput
